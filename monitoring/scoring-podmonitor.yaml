@@ -1,0 +1,27 @@
+# Fichier : monitoring/scoring-podmonitor.yaml
+# « Scrape les pods de l'InferenceService scoring-model sur le port 8000, chemin /metrics. »
+# PodMonitor plutôt que ServiceMonitor : en mode Knative, les Services de la révision
+# n'exposent que le queue-proxy, jamais le port 8000 de l'API ; on vise donc les pods.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: scoring-api
+  namespace: monitoring
+  labels:
+    release: kube-prom-stack
+spec:
+  namespaceSelector:
+    matchNames: [scoring, scoring-staging]     # prod (Lab 5) et staging (Lab 6)
+  selector:
+    matchLabels:
+      serving.kserve.io/inferenceservice: scoring-model
+  podMetricsEndpoints:
+    - portNumber: 8000       # port du conteneur kserve-container (Knative le nomme user-port)
+      path: /metrics
+      interval: 15s
+      relabelings:
+        # Labels ajoutés à toutes les séries : quelle révision (canary !) et quel ISVC
+        - sourceLabels: [__meta_kubernetes_pod_label_serving_knative_dev_revision]
+          targetLabel: revision
+        - sourceLabels: [__meta_kubernetes_pod_label_serving_kserve_io_inferenceservice]
+          targetLabel: isvc

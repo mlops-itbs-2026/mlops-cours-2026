@@ -1,0 +1,15 @@
+# Fichier : monitoring/dashboards/kustomization.yaml
+# Les dashboards versionnés dans Git deviennent une ConfigMap labellisée
+# grafana_dashboard: "1" : le sidecar de Grafana la détecte et charge les JSON.
+#   kubectl apply -k monitoring/dashboards
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+configMapGenerator:
+  - name: scoring-dashboards
+    files:
+      - scoring-overview.json
+    options:
+      disableNameSuffixHash: true      # nom stable : une seule ConfigMap, mise à jour en place
+      labels:
+        grafana_dashboard: "1"

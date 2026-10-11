@@ -1,0 +1,46 @@
+# Fichier : monitoring/alertmanager-config.yaml
+# Routage des alertes de l'équipe ml-platform vers Slack, par sévérité.
+# L'URL du webhook Slack n'est PAS dans Git : elle est lue dans le Secret slack-webhook
+# (clé url), créé à la main dans le namespace monitoring (étape 8.2).
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: scoring-slack
+  namespace: monitoring
+spec:
+  route:
+    receiver: slack-ml
+    matchers:
+      - name: team
+        value: ml-platform
+        matchType: "="
+    groupBy: [alertname, severity]
+    groupWait: 10s
+    groupInterval: 5m
+    repeatInterval: 1h
+    routes:
+      - receiver: slack-ml-critical
+        matchers:
+          - name: severity
+            value: critical
+            matchType: "="
+  receivers:
+    - name: slack-ml
+      slackConfigs:
+        - apiURL: {name: slack-webhook, key: url}
+          channel: "#ml-alerts"
+          sendResolved: true
+          title: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+          text: |-
+            {{ range .Alerts }}• {{ .Annotations.summary }}
+            {{ .Annotations.description }} (runbook : {{ .Annotations.runbook }})
+            {{ end }}
+    - name: slack-ml-critical
+      slackConfigs:
+        - apiURL: {name: slack-webhook, key: url}
+          channel: "#ml-alerts-critical"
+          sendResolved: true
+          title: 'CRITIQUE : {{ .GroupLabels.alertname }}'
+          text: |-
+            {{ range .Alerts }}• {{ .Annotations.summary }} (runbook : {{ .Annotations.runbook }})
+            {{ end }}

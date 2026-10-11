@@ -1,0 +1,70 @@
+# Fichier : monitoring/evidently-cronjob.yaml
+# Job de drift toutes les 15 minutes (en production : toutes les heures ou chaque jour).
+# Pré-requis dans le namespace monitoring (étape 6) :
+#   - Secret s3-credentials (identifiants du S3 du cours, recréé depuis .env) ;
+#   - ConfigMap scoring-drift-reference (REFERENCE_URI : train.csv versionné par DVC).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scoring-drift
+  namespace: monitoring
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid          # jamais deux analyses en même temps
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app: scoring-drift
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: drift
+              image: localhost:5001/scoring-drift:1.0.0
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: scoring-drift-reference   # REFERENCE_URI
+              env:
+                - name: AWS_ENDPOINT_URL
+                  value: http://s3.storage:8333
+                - name: AWS_DEFAULT_REGION
+                  value: us-east-1
+                # S3 compatible (SeaweedFS) : pas de sommes de contrôle CRC32 imposées par boto3
+                - name: AWS_REQUEST_CHECKSUM_CALCULATION
+                  value: when_required
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: {name: s3-credentials, key: AWS_ACCESS_KEY_ID}
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: {name: s3-credentials, key: AWS_SECRET_ACCESS_KEY}
+                - name: LOKI_URL
+                  value: http://loki.monitoring:3100
+                - name: PUSHGATEWAY_URL
+                  value: prometheus-pushgateway.monitoring:9091
+                - name: REPORTS_URI
+                  value: s3://monitoring/drift-reports
+                - name: WINDOW_MINUTES
+                  value: "60"
+                - name: MIN_ROWS
+                  value: "500"
+                - name: MAX_ROWS
+                  value: "5000"
+                - name: DRIFT_THRESHOLD
+                  value: "0.25"
+              resources:
+                requests: {cpu: 200m, memory: 384Mi}
+                limits: {cpu: "1", memory: 1Gi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: {drop: [ALL]}

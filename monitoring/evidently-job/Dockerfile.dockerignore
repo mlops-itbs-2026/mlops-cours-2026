@@ -1,0 +1,9 @@
+# Fichier : monitoring/evidently-job/Dockerfile.dockerignore
+# Liste blanche du contexte de build (BuildKit lit <Dockerfile>.dockerignore) : seuls les
+# fichiers copiés par l'image partent au démon Docker, jamais .env ni data/.
+*
+!dataset.yaml
+!src/__init__.py
+!src/dataset_config.py
+!monitoring/evidently-job/requirements.txt
+!monitoring/evidently-job/calc_drift.py

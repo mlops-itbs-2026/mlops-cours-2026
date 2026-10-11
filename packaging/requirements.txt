@@ -8,3 +8,5 @@ onnxruntime==1.30.0
 numpy==2.5.3
 pandas==2.3.3
 pyyaml==6.0.3
+# Lab 7 : métriques Prometheus (/metrics)
+prometheus-client==0.24.1

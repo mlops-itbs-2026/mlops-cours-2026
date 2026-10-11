@@ -1,0 +1,128 @@
+# Fichier : monitoring/scoring-alerts.yaml
+# Règles Prometheus du service de scoring : règles d'enregistrement (agrégats réutilisés
+# par les alertes et le dashboard) puis alertes. Chaque alerte : sévérité, équipe, runbook.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scoring-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prom-stack
+spec:
+  groups:
+    - name: scoring.rules
+      interval: 30s
+      rules:
+        - record: scoring:predict_requests:rate5m
+          expr: |
+            sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict"}[5m]))
+        # Part des requêtes /predict en erreur 5xx, sur 4 fenêtres (alerte « burn rate »).
+        # Tant qu'aucune 5xx n'a eu lieu, la série n'existe pas : pas de données = pas d'alerte.
+        - record: scoring:predict_errors:ratio_rate5m
+          expr: |
+            sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict",code=~"5.."}[5m]))
+            / sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict"}[5m]))
+        - record: scoring:predict_errors:ratio_rate30m
+          expr: |
+            sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict",code=~"5.."}[30m]))
+            / sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict"}[30m]))
+        - record: scoring:predict_errors:ratio_rate1h
+          expr: |
+            sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict",code=~"5.."}[1h]))
+            / sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict"}[1h]))
+        - record: scoring:predict_errors:ratio_rate6h
+          expr: |
+            sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict",code=~"5.."}[6h]))
+            / sum by (namespace) (rate(http_requests_total{isvc="scoring-model",handler="/predict"}[6h]))
+        - record: scoring:latency_p95:5m
+          expr: |
+            histogram_quantile(0.95,
+              sum by (namespace, le) (rate(ml_inference_latency_seconds_bucket{isvc="scoring-model"}[5m])))
+        # Taux de décisions positives (classe positive de dataset.yaml : ici, refus du crédit)
+        - record: scoring:positive_rate:ratio_rate5m
+          expr: |
+            sum by (namespace) (rate(ml_predictions_total{isvc="scoring-model",outcome="1"}[5m]))
+            / sum by (namespace) (rate(ml_predictions_total{isvc="scoring-model"}[5m]))
+        - record: scoring:positive_rate:ratio_rate6h
+          expr: |
+            sum by (namespace) (rate(ml_predictions_total{isvc="scoring-model",outcome="1"}[6h]))
+            / sum by (namespace) (rate(ml_predictions_total{isvc="scoring-model"}[6h]))
+
+    - name: scoring.alerts
+      interval: 30s
+      rules:
+        - alert: ScoringHighLatency
+          expr: scoring:latency_p95:5m{namespace="scoring"} > 0.2
+          for: 5m
+          labels: {severity: warning, team: ml-platform}
+          annotations:
+            summary: "Scoring : latence P95 > 200 ms"
+            description: "P95 actuelle : {{ $value | humanizeDuration }} (SLO : 95 % < 200 ms)."
+            runbook: "monitoring/runbooks.md#scoringhighlatency"
+
+        # SLO de disponibilité : 99,5 % des requêtes /predict sans 5xx (budget : 0,5 %).
+        # Burn rate multi-fenêtres : budget brûlé 14,4x trop vite sur 1 h (et encore sur
+        # les 5 dernières minutes), ou 6x trop vite sur 6 h (et sur 30 min).
+        - alert: ScoringErrorBudgetBurn
+          expr: |
+            (scoring:predict_errors:ratio_rate1h{namespace="scoring"} > (14.4 * 0.005)
+              and scoring:predict_errors:ratio_rate5m{namespace="scoring"} > (14.4 * 0.005))
+            or
+            (scoring:predict_errors:ratio_rate6h{namespace="scoring"} > (6 * 0.005)
+              and scoring:predict_errors:ratio_rate30m{namespace="scoring"} > (6 * 0.005))
+          for: 2m
+          labels: {severity: critical, team: ml-platform}
+          annotations:
+            summary: "Scoring : le budget d'erreur du SLO 99,5 % brûle trop vite"
+            description: "{{ $value | humanizePercentage }} de requêtes /predict en erreur 5xx."
+            runbook: "monitoring/runbooks.md#scoringerrorbudgetburn"
+
+        # Valeur de l'alerte = part des variables en dérive (lue par le webhook CT du Lab 6)
+        - alert: ScoringDataDrift
+          expr: |
+            (ml_drift_detected{model="scoring-model"} == 1)
+              * on (model) group_left () ml_drift_share{model="scoring-model"}
+          for: 5m          # en production : 30 min ou plus (éviter les faux positifs)
+          labels: {severity: warning, team: ml-platform, ct_trigger: "true"}
+          annotations:
+            summary: "Drift sur la variable {{ $labels.feature }}"
+            description: >-
+              La distribution de {{ $labels.feature }} s'écarte des données d'entraînement
+              ({{ $value | humanizePercentage }} des variables en dérive). Ré-entraînement
+              à évaluer.
+            drift_share: "{{ $value }}"
+            runbook: "monitoring/runbooks.md#scoringdatadrift"
+
+        # Taux de refus anormal : 5 dernières minutes comparées aux 6 dernières heures
+        - alert: ScoringPositiveRateShift
+          expr: |
+            abs(scoring:positive_rate:ratio_rate5m{namespace="scoring"}
+                - scoring:positive_rate:ratio_rate6h{namespace="scoring"}) > 0.10
+            and scoring:predict_requests:rate5m{namespace="scoring"} > 0.1
+          for: 5m
+          labels: {severity: warning, team: ml-platform}
+          annotations:
+            summary: "Scoring : taux de décisions positives anormal"
+            description: "Écart de {{ $value | humanizePercentage }} avec les 6 dernières heures."
+            runbook: "monitoring/runbooks.md#scoringpositiverateshift"
+
+        - alert: ScoringNoReplicaAvailable
+          expr: |
+            (sum(kube_deployment_status_replicas_available{namespace="scoring",
+                 deployment=~"scoring-model-predictor-.*"}) or vector(0)) < 1
+          for: 2m
+          labels: {severity: critical, team: ml-platform}
+          annotations:
+            summary: "Aucun pod de scoring-model disponible en production"
+            description: "Aucune révision de l'InferenceService n'a de pod prêt."
+            runbook: "monitoring/runbooks.md#scoringnoreplicaavailable"
+
+        # Qui surveille le surveillant ? Le job de drift tourne toutes les 15 min.
+        - alert: ScoringDriftJobStale
+          expr: time() - max(push_time_seconds{job="scoring-drift"}) > 2700
+          for: 5m
+          labels: {severity: warning, team: ml-platform}
+          annotations:
+            summary: "Le job de drift n'a rien publié depuis 45 min"
+            description: "Dernière publication il y a {{ $value | humanizeDuration }}."
+            runbook: "monitoring/runbooks.md#scoringdriftjobstale"
