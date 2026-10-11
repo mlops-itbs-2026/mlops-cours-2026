@@ -53,5 +53,5 @@ J2 (fin S11), tag `final` 48 h avant la soutenance. Tout est dans
 
 ## Signaler une erreur
 
-Ouvrez une *issue* sur le repo du cours (`ORG_COURS/mlops-cours-2026`) ; les corrections par
+Ouvrez une *issue* sur le repo du cours (`mlops-itbs-2026/mlops-cours-2026`) ; les corrections par
 pull request sont bienvenues, en particulier pour le troubleshooting et les versions d'outils.
