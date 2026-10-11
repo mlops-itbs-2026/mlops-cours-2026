@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   qualite:
-    if: github.repository_owner == 'ORG_COURS'
+    if: github.repository_owner == 'mlops-itbs-2026'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -49,7 +49,7 @@ jobs:
           ! grep -rIl --exclude-dir=.git -e '~/mlops-labs' labs
 
   pdf:
-    if: github.repository_owner == 'ORG_COURS'
+    if: github.repository_owner == 'mlops-itbs-2026'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
