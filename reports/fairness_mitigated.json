@@ -1,0 +1,207 @@
+{
+  "model_version": "3",
+  "decision_threshold": 0.3182,
+  "attributes": {
+    "age": {
+      "proxy": {
+        "auc": 0.77167325428195,
+        "top_proxies": {
+          "housing": 0.686034255599473,
+          "personal_status": 0.6714097496706192,
+          "employment": 0.6339920948616602
+        }
+      },
+      "strategies": {
+        "champion": {
+          "business_cost": 108.0,
+          "cost_change": 0.0,
+          "refusal_rate": 0.63,
+          "demographic_parity_difference": 0.17295747730530342,
+          "demographic_parity_ratio": 0.7751552795031056,
+          "acceptance_rate_ratio": 0.5715976331360947,
+          "equalized_odds_difference": 0.09370988446726569,
+          "false_positive_rate_difference": 0.09166666666666667,
+          "uses_attribute_at_prediction": true
+        },
+        "sans_attribut": {
+          "business_cost": 111.0,
+          "cost_change": 0.02777777777777768,
+          "refusal_rate": 0.645,
+          "demographic_parity_difference": 0.15432393693263258,
+          "demographic_parity_ratio": 0.7993788819875777,
+          "acceptance_rate_ratio": 0.5992555831265509,
+          "equalized_odds_difference": 0.09370988446726569,
+          "false_positive_rate_difference": 0.06666666666666665,
+          "uses_attribute_at_prediction": false
+        },
+        "threshold_optimizer_accuracy": {
+          "business_cost": 239.0,
+          "cost_change": 1.2129629629629628,
+          "refusal_rate": 0.085,
+          "demographic_parity_difference": 0.05367096671444496,
+          "demographic_parity_ratio": 0.5813664596273292,
+          "acceptance_rate_ratio": 0.9420065393219756,
+          "equalized_odds_difference": 0.025,
+          "false_positive_rate_difference": 0.025,
+          "uses_attribute_at_prediction": true
+        },
+        "threshold_optimizer_cout": {
+          "business_cost": 114.0,
+          "cost_change": 0.05555555555555558,
+          "refusal_rate": 0.6,
+          "demographic_parity_difference": 0.082815734989648,
+          "demographic_parity_ratio": 0.8757763975155279,
+          "acceptance_rate_ratio": 0.8009950248756218,
+          "equalized_odds_difference": 0.011553273427471145,
+          "false_positive_rate_difference": 0.00833333333333336,
+          "uses_attribute_at_prediction": true
+        },
+        "exponentiated_gradient": {
+          "business_cost": 116.0,
+          "cost_change": 0.07407407407407418,
+          "refusal_rate": 0.64,
+          "demographic_parity_difference": 0.06497849976110848,
+          "demographic_parity_ratio": 0.9061421670117322,
+          "acceptance_rate_ratio": 0.8256410256410257,
+          "equalized_odds_difference": 0.11810012836970474,
+          "false_positive_rate_difference": 0.10833333333333334,
+          "uses_attribute_at_prediction": false
+        }
+      }
+    },
+    "personal_status": {
+      "proxy": {
+        "auc": 0.7066289842850708,
+        "top_proxies": {
+          "age": 0.6414255498634012,
+          "housing": 0.6102308795487577,
+          "employment": 0.6056009631538126
+        }
+      },
+      "strategies": {
+        "champion": {
+          "business_cost": 108.0,
+          "cost_change": 0.0,
+          "refusal_rate": 0.63,
+          "demographic_parity_difference": 0.27401129943502833,
+          "demographic_parity_ratio": 0.6711864406779661,
+          "acceptance_rate_ratio": 0.3782051282051282,
+          "equalized_odds_difference": 0.4484126984126984,
+          "false_positive_rate_difference": 0.4484126984126984,
+          "uses_attribute_at_prediction": true
+        },
+        "sans_attribut": {
+          "business_cost": 119.0,
+          "cost_change": 0.10185185185185186,
+          "refusal_rate": 0.685,
+          "demographic_parity_difference": 0.17231638418079098,
+          "demographic_parity_ratio": 0.7932203389830508,
+          "acceptance_rate_ratio": 0.49166666666666664,
+          "equalized_odds_difference": 0.38888888888888884,
+          "false_positive_rate_difference": 0.38888888888888884,
+          "uses_attribute_at_prediction": false
+        },
+        "threshold_optimizer_accuracy": {
+          "business_cost": 153.0,
+          "cost_change": 0.41666666666666674,
+          "refusal_rate": 0.285,
+          "demographic_parity_difference": 0.19444444444444442,
+          "demographic_parity_ratio": 0.5625,
+          "acceptance_rate_ratio": 0.7407407407407408,
+          "equalized_odds_difference": 0.47058823529411764,
+          "false_positive_rate_difference": 0.07936507936507936,
+          "uses_attribute_at_prediction": true
+        },
+        "threshold_optimizer_cout": {
+          "business_cost": 109.0,
+          "cost_change": 0.0092592592592593,
+          "refusal_rate": 0.635,
+          "demographic_parity_difference": 0.2777777777777778,
+          "demographic_parity_ratio": 0.6428571428571428,
+          "acceptance_rate_ratio": 0.4444444444444444,
+          "equalized_odds_difference": 0.33333333333333337,
+          "false_positive_rate_difference": 0.2222222222222222,
+          "uses_attribute_at_prediction": true
+        },
+        "exponentiated_gradient": {
+          "business_cost": 118.0,
+          "cost_change": 0.09259259259259256,
+          "refusal_rate": 0.65,
+          "demographic_parity_difference": 0.13983050847457623,
+          "demographic_parity_ratio": 0.8135593220338984,
+          "acceptance_rate_ratio": 0.6413043478260869,
+          "equalized_odds_difference": 0.33333333333333337,
+          "false_positive_rate_difference": 0.2777777777777778,
+          "uses_attribute_at_prediction": false
+        }
+      }
+    },
+    "foreign_worker": {
+      "proxy": {
+        "auc": 0.7809736015618368,
+        "top_proxies": {
+          "duration": 0.7650093370681607,
+          "property_magnitude": 0.6739920210508445,
+          "purpose": 0.6736779560308973
+        }
+      },
+      "strategies": {
+        "champion": {
+          "business_cost": 108.0,
+          "cost_change": 0.0,
+          "refusal_rate": 0.63,
+          "demographic_parity_difference": 0.134020618556701,
+          "demographic_parity_ratio": 0.7886178861788619,
+          "acceptance_rate_ratio": 0.7319587628865979,
+          "equalized_odds_difference": 0.12592592592592589,
+          "false_positive_rate_difference": 0.12592592592592589,
+          "uses_attribute_at_prediction": true
+        },
+        "sans_attribut": {
+          "business_cost": 107.0,
+          "cost_change": -0.0092592592592593,
+          "refusal_rate": 0.625,
+          "demographic_parity_difference": 0.12886597938144329,
+          "demographic_parity_ratio": 0.7950819672131147,
+          "acceptance_rate_ratio": 0.7422680412371134,
+          "equalized_odds_difference": 0.11864406779661019,
+          "false_positive_rate_difference": 0.11851851851851847,
+          "uses_attribute_at_prediction": false
+        },
+        "threshold_optimizer_accuracy": {
+          "business_cost": 162.0,
+          "cost_change": 0.5,
+          "refusal_rate": 0.21,
+          "demographic_parity_difference": 0.04467353951890035,
+          "demographic_parity_ratio": 0.7886178861788617,
+          "acceptance_rate_ratio": 0.9463917525773196,
+          "equalized_odds_difference": 0.5084745762711864,
+          "false_positive_rate_difference": 0.08888888888888889,
+          "uses_attribute_at_prediction": true
+        },
+        "threshold_optimizer_cout": {
+          "business_cost": 106.0,
+          "cost_change": -0.01851851851851849,
+          "refusal_rate": 0.62,
+          "demographic_parity_difference": 0.12371134020618557,
+          "demographic_parity_ratio": 0.8016528925619835,
+          "acceptance_rate_ratio": 0.7525773195876289,
+          "equalized_odds_difference": 0.11864406779661019,
+          "false_positive_rate_difference": 0.11111111111111105,
+          "uses_attribute_at_prediction": true
+        },
+        "exponentiated_gradient": {
+          "business_cost": 110.0,
+          "cost_change": 0.0185185185185186,
+          "refusal_rate": 0.64,
+          "demographic_parity_difference": 0.14432989690721654,
+          "demographic_parity_ratio": 0.7759999999999999,
+          "acceptance_rate_ratio": 0.711340206185567,
+          "equalized_odds_difference": 0.14074074074074072,
+          "false_positive_rate_difference": 0.14074074074074072,
+          "uses_attribute_at_prediction": false
+        }
+      }
+    }
+  }
+}

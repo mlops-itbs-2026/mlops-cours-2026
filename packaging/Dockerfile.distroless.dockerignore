@@ -1,0 +1,13 @@
+# Fichier : packaging/Dockerfile.distroless.dockerignore
+# .dockerignore propre à packaging/Dockerfile.distroless (BuildKit le lit à la place de
+# celui de la racine) : même liste blanche que l'image du Lab 4 — aucun secret (.env),
+# aucune donnée, aucun pickle de la démo ModelScan ne peut entrer dans l'image.
+*
+!dataset.yaml
+!src/__init__.py
+!src/dataset_config.py
+!packaging/requirements.txt
+!packaging/app/__init__.py
+!packaging/app/serve.py
+!packaging/model/model.onnx
+!packaging/model/metadata.json

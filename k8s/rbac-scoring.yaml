@@ -1,0 +1,48 @@
+# Fichier : k8s/rbac-scoring.yaml
+# Identité minimale de l'API de scoring (InferenceService du Lab 5, namespace scoring).
+# Principe du moindre privilège : l'API ne fait qu'exécuter un modèle ONNX ; elle n'a
+# besoin de RIEN sur l'API Kubernetes. Le Role ci-dessous n'autorise que la lecture d'UN
+# Secret nommé (les identifiants S3, si un composant du pod doit un jour les relire) :
+# pas de list/watch (impossible d'énumérer les secrets), pas de create/delete, pas de « * ».
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scoring-sa
+  namespace: scoring
+  labels:
+    app.kubernetes.io/part-of: scoring
+# Défense en profondeur : aucun jeton d'API monté dans les pods de l'API de scoring.
+# Un attaquant qui prendrait le contrôle du conteneur n'aurait aucun identifiant
+# Kubernetes à réutiliser. (Un pod qui en aurait besoin le réactive dans son spec.)
+automountServiceAccountToken: false
+# KServe lit ce Secret (via le ServiceAccount) quand un modèle est téléchargé depuis S3
+# (storageUri s3://…) : c'est le Secret synchronisé par External Secrets (étape 8).
+secrets:
+  - name: s3-credentials
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scoring-reader
+  namespace: scoring
+rules:
+  # Lire SES identifiants S3, et seulement eux (resourceNames).
+  # PAS de 'list', 'watch', 'create', 'update', 'delete' ni de '*'.
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get]
+    resourceNames: [s3-credentials]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scoring-reader-binding
+  namespace: scoring
+subjects:
+  - kind: ServiceAccount
+    name: scoring-sa
+    namespace: scoring
+roleRef:
+  kind: Role
+  name: scoring-reader
+  apiGroup: rbac.authorization.k8s.io

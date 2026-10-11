@@ -1,0 +1,90 @@
+# Fichier : k8s/mlflow-creds-source.yaml
+# Identifiants S3 du cours synchronisés par External Secrets Operator (ESO) dans le
+# namespace scoring — au lieu d'un Secret écrit en clair dans un manifest versionné.
+#
+# Le « coffre-fort » est simulé par le namespace storage : son Secret s3-credentials
+# (Lab 0) fait office de source de vérité, tenue par l'équipe plateforme. En production,
+# seul le bloc `provider` du SecretStore change (vault, aws, gcpsm, azurekv…) : les
+# ExternalSecret et les applications restent identiques. AUCUNE valeur secrète ici.
+#
+# 1. Une identité dédiée à ESO, autorisée à LIRE un seul Secret du namespace storage.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eso-s3-reader
+  namespace: scoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eso-s3-reader
+  namespace: storage
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get]
+    resourceNames: [s3-credentials]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: eso-s3-reader
+  namespace: storage
+subjects:
+  - kind: ServiceAccount
+    name: eso-s3-reader
+    namespace: scoring  # identité d'un autre namespace : c'est permis
+roleRef:
+  kind: Role
+  name: eso-s3-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# 2. Le SecretStore : « où et comment lire les secrets » (provider kubernetes).
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: course-secrets
+  namespace: scoring
+spec:
+  provider:
+    kubernetes:
+      remoteNamespace: storage  # le « coffre » : seul namespace lisible par ce store
+      server:
+        url: https://kubernetes.default.svc
+        caProvider:  # CA de l'API Kubernetes, publiée dans chaque namespace
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: eso-s3-reader  # ESO demande un jeton éphémère pour cette identité
+---
+# 3. L'ExternalSecret : « quelles clés copier, vers quel Secret, à quelle fréquence ».
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: s3-credentials
+  namespace: scoring
+spec:
+  refreshInterval: 1m  # 1h en production ; court ici pour voir la resynchronisation
+  secretStoreRef:
+    kind: SecretStore
+    name: course-secrets
+  target:
+    name: s3-credentials  # Secret créé (et possédé) par ESO dans le namespace scoring
+    creationPolicy: Owner
+    template:
+      metadata:
+        annotations:  # lues par KServe pour télécharger un modèle depuis SeaweedFS
+          serving.kserve.io/s3-endpoint: s3.storage:8333
+          serving.kserve.io/s3-usehttps: "0"
+          serving.kserve.io/s3-region: us-east-1
+  data:
+    - secretKey: AWS_ACCESS_KEY_ID
+      remoteRef:
+        key: s3-credentials
+        property: AWS_ACCESS_KEY_ID
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      remoteRef:
+        key: s3-credentials
+        property: AWS_SECRET_ACCESS_KEY

@@ -13,3 +13,13 @@ images:
     newTag: "2.0.0"
 patches:
   - path: canary.yaml
+  # Lab 8 : identité minimale de l'API (ServiceAccount de k8s/rbac-scoring.yaml, appliqué
+  # avant ce commit). En prod seulement : scoring-sa n'existe que dans le namespace scoring.
+  # Dans Git, pas par kubectl patch : Argo CD (selfHeal) annulerait la modification.
+  - target:
+      kind: InferenceService
+      name: scoring-model
+    patch: |-
+      - op: add
+        path: /spec/predictor/serviceAccountName
+        value: scoring-sa

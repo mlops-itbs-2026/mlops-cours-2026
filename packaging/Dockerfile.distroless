@@ -1,0 +1,55 @@
+# Fichier : packaging/Dockerfile.distroless
+# Image de serving DURCIE (Lab 8) : même API, même modèle que packaging/Dockerfile (Lab 4),
+# sur une base « distroless » : ni shell, ni gestionnaire de paquets, utilisateur non-root.
+# Contexte de build = RACINE du repo, après `docker login dhi.io` (compte Docker gratuit) :
+#   docker build -f packaging/Dockerfile.distroless -t scoring-api:distroless .
+#
+# Base : Docker Hardened Images (DHI, Apache 2.0, gratuites depuis décembre 2025), Python
+# 3.12 sur Debian 13. gcr.io/distroless/python3 ne convient pas : debian12 = Python 3.11
+# (plus mise à jour), debian13 = Python 3.13. Or les dépendances sont des wheels compilées
+# pour UN interpréteur (cp312) : builder et runtime doivent avoir le même Python, celui du
+# projet. On suit le schéma recommandé par DHI : un venv construit dans la variante -dev.
+
+# --- Stage 1 : builder (variante -dev : shell + pip, root) ----------------------------
+FROM dhi.io/python:3.12-debian13-dev AS builder
+ENV PATH="/opt/venv/bin:$PATH"
+RUN python -m venv /opt/venv
+COPY packaging/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# --- Stage 2 : runtime distroless (pas de shell, pas d'apt, utilisateur nonroot) -------
+FROM dhi.io/python:3.12-debian13 AS runtime
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Même arborescence que le repo (et que l'image du Lab 4) ; fichiers en lecture seule.
+COPY dataset.yaml ./
+COPY src/__init__.py src/dataset_config.py src/
+COPY packaging/app/__init__.py packaging/app/serve.py packaging/app/
+COPY packaging/model/model.onnx packaging/model/metadata.json packaging/model/
+
+# nonroot (UID 65532) existe déjà dans l'image de base : USER numérique pour runAsNonRoot.
+USER 65532:65532
+EXPOSE 8000
+
+# Forme exec obligatoire : il n'y a pas de /bin/sh pour interpréter une chaîne.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --start-interval=2s \
+    CMD ["python", "-c", \
+         "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+
+ARG VERSION=1.0.0
+ARG MODEL_VERSION=unknown
+LABEL org.opencontainers.image.title="scoring-api" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.base.name="dhi.io/python:3.12-debian13" \
+      mlflow.model_name="scoring-model" \
+      mlflow.model_alias="champion" \
+      mlflow.model_version="${MODEL_VERSION}"
+# Comme l'image du Lab 5 : l'API expose la version de son image (/version, /metadata).
+ENV APP_VERSION=${VERSION}
+
+CMD ["python", "-m", "uvicorn", "app.serve:app", "--app-dir", "packaging", \
+     "--host", "0.0.0.0", "--port", "8000"]
