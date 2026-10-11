@@ -98,7 +98,7 @@ soit validé avant la séance du Lab 1 (S2)**. Conditions, toutes obligatoires :
 
 **Proposer un dataset** (une seule issue par binôme, quelle que soit l'option) : ouvrez une
 issue sur le repo du cours
-([https://github.com/ORG_COURS/mlops-cours-2026](https://github.com/ORG_COURS/mlops-cours-2026),
+([https://github.com/mlops-itbs-2026/mlops-cours-2026](https://github.com/mlops-itbs-2026/mlops-cours-2026),
 bouton **Issues** > **New issue** > **Mini-projet : proposer un dataset libre**). Le formulaire
 demande le **lien, la licence, la taille, la cible, les attributs sensibles et le contexte en
 5 lignes** (qui utiliserait le modèle, pour quelle décision, ce que coûte chaque type d'erreur).
@@ -246,7 +246,7 @@ mlops-cours-2026/
 cd ~
 git clone git@github.com:PROPRIETAIRE/mlops-cours-2026.git
 cd ~/mlops-cours-2026
-git remote add upstream https://github.com/ORG_COURS/mlops-cours-2026.git
+git remote add upstream https://github.com/mlops-itbs-2026/mlops-cours-2026.git
 
 # Les deux : son propre cluster et son propre .env
 cp .env.example .env

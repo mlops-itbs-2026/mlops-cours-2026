@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   release:
-    if: github.repository_owner == 'ORG_COURS'
+    if: github.repository_owner == 'mlops-itbs-2026'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
