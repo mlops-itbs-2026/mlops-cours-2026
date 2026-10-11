@@ -45,6 +45,8 @@ LABEL org.opencontainers.image.title="scoring-api" \
       mlflow.model_name="scoring-model" \
       mlflow.model_alias="champion" \
       mlflow.model_version="${MODEL_VERSION}"
+# Lab 5 : l'API connaît la version de son image (/version, /metadata) — canary, rollback.
+ENV APP_VERSION=${VERSION}
 
 CMD ["python", "-m", "uvicorn", "app.serve:app", "--app-dir", "packaging", \
      "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,27 @@
+# Fichier : serving/scoring-triton-isvc.yaml
+# Variante Triton : le MÊME graphe ONNX que l'image du Lab 4, servi par NVIDIA Triton
+# (runtime kserve-tritonserver, protocole V2). Le storage-initializer de KServe copie le
+# dépôt de modèles depuis le S3 du cours, avec le Secret du ServiceAccount kserve-s3.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-triton
+  namespace: scoring
+  annotations:
+    serving.kserve.io/deploymentMode: Knative
+    # 1er démarrage : l'image Triton (≈ 6 Go compressés) peut dépasser les 10 min par défaut
+    serving.knative.dev/progress-deadline: "1800s"
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1          # 1 pod : comparaison à ressources égales (étape 8.5)
+    serviceAccountName: kserve-s3
+    model:
+      modelFormat:
+        name: onnx
+      runtime: kserve-tritonserver
+      protocolVersion: v2
+      storageUri: s3://models/triton   # scoring-model/config.pbtxt + scoring-model/1/model.onnx
+      resources:
+        requests: {cpu: "500m", memory: "1Gi"}
+        limits: {cpu: "1", memory: "2Gi"}

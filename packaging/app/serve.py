@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parents[2]  # racine du repo (/app dans l'image)
 sys.path.append(str(ROOT))  # rend « src » importable quel que soit le lanceur
 from src.dataset_config import load_config  # noqa: E402
 
-API_VERSION = "1.0.0"
+# Version de l'image : ENV APP_VERSION posée au build (Lab 5) ; 1.0.0 pour l'image du Lab 4
+API_VERSION = os.getenv("APP_VERSION", "1.0.0")
 MAX_BATCH = int(os.getenv("MAX_BATCH", "1000"))
 MODEL_PATH = Path(os.getenv("MODEL_PATH", ROOT / "packaging" / "model" / "model.onnx"))
 
@@ -96,6 +97,12 @@ def get_metadata():
         "features": {"numeric": cfg.numeric, "categorical": cfg.categorical},
         "model": {k: metadata.get(k) for k in MODEL_KEYS},
     }
+
+
+@app.get("/version")
+def version():
+    # Lab 5 : quelle version a répondu ? (canary, rollback, tests de fumée du Lab 6)
+    return {"version": API_VERSION, "model_version": MODEL_VERSION}
 
 
 @app.post("/predict", response_model=PredictResponse)

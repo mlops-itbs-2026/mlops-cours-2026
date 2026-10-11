@@ -1,0 +1,32 @@
+# Fichier : serving/scoring-isvc-v1.yaml
+# InferenceService minimal : l'image FastAPI + ONNX du Lab 4, servie par KServe en mode
+# Knative (Knative Serving + Kourier). Appel : http://localhost:30080 + en-tête Host.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-model
+  namespace: scoring
+  annotations:
+    serving.kserve.io/deploymentMode: Knative
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 3
+    containers:
+      - name: kserve-container
+        image: localhost:5001/scoring-api:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8000
+            protocol: TCP
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+        readinessProbe:      # sans délai ni période : Knative sonde toutes les 25 ms
+          httpGet:           # au démarrage, le pod est prêt dès que /health répond
+            path: /health
+            port: 8000

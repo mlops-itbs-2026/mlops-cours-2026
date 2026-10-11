@@ -1,0 +1,30 @@
+# Fichier : serving/scoring-isvc-v1-autoscale.yaml
+# Même InferenceService, avec l'autoscaler de Knative (KPA) : cible en requêtes/s par pod,
+# de 0 pod (scale-to-zero) à 5 pods.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-model
+  namespace: scoring
+  annotations:
+    serving.kserve.io/deploymentMode: Knative
+    autoscaling.knative.dev/window: "60s"            # fenêtre de calcul du RPS moyen
+    autoscaling.knative.dev/scale-down-delay: "30s"  # attendre 30 s avant de réduire
+spec:
+  predictor:
+    minReplicas: 0          # scale-to-zero : plus aucun pod quand personne n'appelle
+    maxReplicas: 5
+    scaleMetric: rps        # autres valeurs : concurrency (défaut), cpu, memory
+    scaleTarget: 200        # 200 requêtes/s par pod ; Knative vise 70 % de la cible (140)
+    containers:
+      - name: kserve-container
+        image: localhost:5001/scoring-api:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8000
+            protocol: TCP
+        resources:
+          requests: {cpu: "200m", memory: "256Mi"}
+          limits: {cpu: "1", memory: "512Mi"}
+        readinessProbe:
+          httpGet: {path: /health, port: 8000}

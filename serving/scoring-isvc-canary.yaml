@@ -1,0 +1,32 @@
+# Fichier : serving/scoring-isvc-canary.yaml
+# Canary : la nouvelle révision (image 2.0.0) reçoit 10 % du trafic ; la dernière révision
+# déployée à 100 % (image 1.0.0) garde les 90 % restants. Propre au mode Knative.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-model
+  namespace: scoring
+  annotations:
+    serving.kserve.io/deploymentMode: Knative
+    serving.kserve.io/enable-tag-routing: "true"     # adresses dédiées latest-… et prev-…
+    autoscaling.knative.dev/window: "60s"
+    autoscaling.knative.dev/scale-down-delay: "30s"
+spec:
+  predictor:
+    minReplicas: 1          # pendant le canary, les deux versions restent chaudes
+    maxReplicas: 5
+    scaleMetric: rps
+    scaleTarget: 200
+    canaryTrafficPercent: 10                     # <--- 10 % vers la nouvelle version
+    containers:
+      - name: kserve-container
+        image: localhost:5001/scoring-api:2.0.0  # <--- nouvelle image
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8000
+            protocol: TCP
+        resources:
+          requests: {cpu: "200m", memory: "256Mi"}
+          limits: {cpu: "1", memory: "512Mi"}
+        readinessProbe:
+          httpGet: {path: /health, port: 8000}

@@ -1,0 +1,26 @@
+# Fichier : serving/scoring-bento-isvc.yaml
+# Variante BentoML du Lab 4 (pipeline scikit-learn, port 3000), servie par KServe comme
+# l'API FastAPI : même passerelle, même route /predict, même corps de requête.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-bento
+  namespace: scoring
+  annotations:
+    serving.kserve.io/deploymentMode: Knative
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1          # 1 pod : comparaison à ressources égales (étape 8.5)
+    containers:
+      - name: kserve-container
+        image: localhost:5001/scoring-bento:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 3000
+            protocol: TCP
+        resources:
+          requests: {cpu: "200m", memory: "512Mi"}
+          limits: {cpu: "1", memory: "1Gi"}
+        readinessProbe:
+          httpGet: {path: /readyz, port: 3000}

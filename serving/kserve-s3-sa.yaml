@@ -1,0 +1,12 @@
+# Fichier : serving/kserve-s3-sa.yaml
+# ServiceAccount des InferenceServices qui téléchargent un modèle depuis le S3 du cours.
+# KServe lit les clés AWS_* du Secret listé ci-dessous ET les annotations
+# serving.kserve.io/s3-* posées sur ce Secret (point d'accès, HTTP, région).
+# Le Secret s3-credentials n'est pas dans le repo : il est créé depuis .env (étape 8.2).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kserve-s3
+  namespace: scoring
+secrets:
+  - name: s3-credentials
