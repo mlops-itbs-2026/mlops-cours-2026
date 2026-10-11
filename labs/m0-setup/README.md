@@ -277,7 +277,7 @@ ssh -T git@github.com
 ### 3.2 Créer votre copie du repo sur GitHub
 
 Ouvrez le repo modèle du cours,
-[https://github.com/ORG_COURS/mlops-cours-2026](https://github.com/ORG_COURS/mlops-cours-2026).
+[https://github.com/mlops-itbs-2026/mlops-cours-2026](https://github.com/mlops-itbs-2026/mlops-cours-2026).
 Deux possibilités :
 
 | | **Fork** (recommandé) | **Use this template** |
@@ -323,13 +323,13 @@ git clone git@github.com:VOTRE_USER/mlops-cours-2026.git
 cd ~/mlops-cours-2026
 
 # Remote "upstream" = repo du cours, pour récupérer les correctifs en cours de semestre
-git remote add upstream https://github.com/ORG_COURS/mlops-cours-2026.git
+git remote add upstream https://github.com/mlops-itbs-2026/mlops-cours-2026.git
 git remote -v
 ```
 
 > **Sortie attendue :**
 > `origin git@github.com:VOTRE_USER/mlops-cours-2026.git (fetch)` et `(push)`, puis
-> `upstream https://github.com/ORG_COURS/mlops-cours-2026.git (fetch)` et `(push)`.
+> `upstream https://github.com/mlops-itbs-2026/mlops-cours-2026.git (fetch)` et `(push)`.
 
 > [!TIP]
 > **Récupérer une mise à jour du cours**
