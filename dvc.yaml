@@ -1,0 +1,58 @@
+# Fichier : dvc.yaml
+# Pipeline du projet : download -> prepare -> train -> evaluate.
+# `dvc repro` ne relance que les stages dont une dépendance (deps, params) a changé.
+stages:
+  download:
+    cmd: python -m src.download
+    deps:
+      - src/dataset_config.py
+      - src/download.py
+    params:
+      - dataset.yaml:
+          - features
+          - raw_path
+          - target
+    outs:
+      - data/raw/dataset.csv
+  prepare:
+    cmd: python -m src.prepare
+    deps:
+      - src/dataset_config.py
+      - src/prepare.py
+      - data/raw/dataset.csv
+    params:
+      - dataset.yaml:
+          - features
+          - split
+          - target
+      - prepare
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+      - data/processed/features.parquet
+  train:
+    cmd: python -m src.train
+    deps:
+      - src/dataset_config.py
+      - src/train.py
+      - data/processed/train.csv
+      - data/processed/test.csv
+    params:
+      - dataset.yaml:
+          - metrics
+      - train
+    outs:
+      - models/model
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - src/train.py
+      - models/model
+      - data/processed/test.csv
+    params:
+      - dataset.yaml:
+          - metrics
+    metrics:
+      - reports/metrics.json:
+          cache: false

@@ -1,0 +1,15 @@
+# Fichier : params.yaml
+# Paramètres du pipeline, suivis par DVC (dvc params diff).
+# Le contrat des données (colonnes, cible, split, métriques, seuil) est dans dataset.yaml.
+prepare:
+  id_column: request_id  # identifiant de demande, créé s'il est absent (entité Feast)
+  event_timestamp: "2026-01-01T00:00:00+00:00"  # date de valeur des features (Feast)
+
+train:
+  model: logistic_regression  # logistic_regression | random_forest | gradient_boosting | dummy
+  C: 0.1  # régularisation (logistic_regression)
+  class_weight: balanced  # balanced | none (logistic_regression, random_forest)
+  n_estimators: 200  # random_forest, gradient_boosting
+  max_depth: 8  # entier ou none (random_forest, gradient_boosting)
+  learning_rate: 0.1  # gradient_boosting
+  random_state: 42  # graine du modèle

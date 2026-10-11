@@ -1,0 +1,6 @@
+# Fichier : .dvcignore
+# Créé par `dvc init`. Dossiers que DVC n'a pas besoin de parcourir quand il cherche
+# les dvc.yaml et les fichiers .dvc du repo (dvc status reste rapide).
+.venv/
+features/data/
+mlruns/
