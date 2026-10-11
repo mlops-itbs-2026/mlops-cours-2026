@@ -1,0 +1,10 @@
+# Fichier : packaging/requirements.txt
+# Dépendances de l'image de serving UNIQUEMENT (pas de MLflow, scikit-learn ni skl2onnx :
+# l'image ne fait qu'exécuter le graphe ONNX). Versions alignées sur uv.lock.
+fastapi==0.142.2
+pydantic==2.13.5
+uvicorn[standard]==0.54.0
+onnxruntime==1.30.0
+numpy==2.5.3
+pandas==2.3.3
+pyyaml==6.0.3

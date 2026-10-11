@@ -1,0 +1,14 @@
+# Fichier : packaging/bento/bentofile.yaml
+service: "service:ScoringBento"
+labels:
+  project: scoring
+  owner: mlops-cours
+include:
+  - "service.py"
+python:
+  packages:
+    - scikit-learn==1.9.1
+    - pandas==2.3.3
+    - numpy==2.5.3
+docker:
+  python_version: "3.12"

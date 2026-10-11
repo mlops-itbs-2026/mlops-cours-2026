@@ -1,0 +1,12 @@
+# Fichier : packaging/Dockerfile.naive
+# Baseline volontairement naïve. Contexte de build = racine du repo :
+#   docker build -f packaging/Dockerfile.naive -t scoring-api:naive .
+FROM python:3.12
+
+WORKDIR /app
+COPY . /app
+RUN pip install fastapi "uvicorn[standard]" onnxruntime numpy pandas pyyaml
+
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "app.serve:app", "--app-dir", "packaging", \
+     "--host", "0.0.0.0", "--port", "8000"]

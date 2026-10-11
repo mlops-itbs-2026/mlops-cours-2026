@@ -1,0 +1,4 @@
+# Fichier : packaging/Dockerfile.naive.dockerignore
+# Même la baseline naïve exclut l'environnement virtuel : avec lui, le contexte de build
+# (et l'image) prendrait plusieurs Go. Tout le reste du repo est copié (.git, data/, …).
+.venv/

@@ -1,0 +1,14 @@
+# Fichier : packaging/Dockerfile.dockerignore
+# .dockerignore propre à packaging/Dockerfile (BuildKit le lit à la place de celui de la
+# racine). Liste blanche : on exclut TOUT, puis on ré-inclut ce que l'image copie.
+# Le contexte envoyé au démon passe de plusieurs centaines de Mo (.venv, .git, data/,
+# mlruns/…) à quelques centaines de ko, et aucun secret (.env) ne peut fuiter.
+*
+!dataset.yaml
+!src/__init__.py
+!src/dataset_config.py
+!packaging/requirements.txt
+!packaging/app/__init__.py
+!packaging/app/serve.py
+!packaging/model/model.onnx
+!packaging/model/metadata.json
