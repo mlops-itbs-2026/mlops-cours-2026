@@ -13,3 +13,17 @@ train:
   max_depth: 8  # entier ou none (random_forest, gradient_boosting)
   learning_rate: 0.1  # gradient_boosting
   random_state: 42  # graine du modèle
+
+# Lab 3 : détection de drift (src/detect_drift.py, pipelines KFP)
+drift:
+  ks_alpha: 0.05  # significativité : p-value du test (KS numérique, chi2 catégorielle)
+  psi_threshold: 0.25  # magnitude : PSI à partir duquel le déplacement compte
+  drift_share: 0.1  # gate : le lot dérive dès que 10 % des colonnes dérivent
+  # Scénario simulé (src/simulate.py, pipelines/drift_demo.py), propre au dataset :
+  # une clientèle plus jeune, qui emprunte plus et plus longtemps.
+  simulation:
+    scale:  # facteurs multiplicatifs
+      credit_amount: 1.4
+      duration: 1.3
+    shift:  # décalages, bornés au domaine observé
+      age: -8

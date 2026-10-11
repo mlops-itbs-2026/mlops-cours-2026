@@ -63,7 +63,15 @@ def run_stage(module: str, args=(), inputs=None, outputs=None, env=None) -> None
         work = Path(tmp)
         for rel, src in (inputs or {}).items():
             copy(src, work / rel)
-        execute(module, args, work, env)
+        try:
+            execute(module, args, work, env)
+        except subprocess.CalledProcessError:
+            # Gate en échec (Lab 3) : on recopie quand même les rapports déjà écrits,
+            # ils expliquent l'échec (kfp.local les garde dans local_outputs/)
+            for rel, dst in (outputs or {}).items():
+                if (work / rel).exists():
+                    copy(work / rel, dst)
+            raise
         for rel, dst in (outputs or {}).items():
             copy(work / rel, dst)
 

@@ -1,7 +1,8 @@
 # Fichier : pipelines/requirements.txt
 # Dépendances de l'image du pipeline (pipelines/Dockerfile) : de quoi exécuter src/
-# (download, validate_data, prepare, train, evaluate, promote) et parler au serveur
-# MLflow du cours. Versions alignées sur uv.lock. kfp est installé à part (Dockerfile).
+# (download, validate_data, prepare, train, evaluate, promote, detect_drift,
+# validate_model) et parler au serveur MLflow du cours. Versions alignées sur uv.lock.
+# kfp est installé à part (Dockerfile).
 mlflow-skinny==3.16.1  # client MLflow seul : le serveur tourne dans le cluster
 scikit-learn==1.9.1
 skops==0.16.0  # format de sérialisation des modèles scikit-learn par MLflow 3
@@ -10,3 +11,8 @@ numpy==2.5.3
 pyarrow==25.0.1  # data/processed/features.parquet (src/prepare.py)
 pyyaml==6.0.3
 boto3==1.43.106  # dossier de travail S3 des tasks Airflow (pipelines/stage.py)
+# Lab 3 : gates de validation
+great-expectations==1.23.2  # contrat de données (gx/)
+evidently==0.7.23  # rapports de drift et de classification
+scipy==1.18.1  # tests KS, chi2, Wasserstein (src/detect_drift.py)
+pytest==9.1.1  # tests comportementaux du modèle (tests/test_model_behavior.py)

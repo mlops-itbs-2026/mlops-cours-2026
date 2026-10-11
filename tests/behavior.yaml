@@ -1,0 +1,29 @@
+# Fichier : tests/behavior.yaml
+# Attentes comportementales du modèle, PROPRES AU DATASET, lues par
+# tests/test_model_behavior.py. Changer de dataset = réécrire ce fichier.
+
+# Invariance : changer cet attribut ne devrait pas changer la décision (aucun
+# effet attendu sur le risque). Tolérance : part maximale de décisions qui
+# changent, parmi les demandes dont on a modifié la valeur.
+invariance:
+  - column: residence_since  # ancienneté dans le logement actuel (1 à 4)
+    max_flip_rate: 0.05
+
+# Directionnels : augmenter la variable (x factor) ne doit pas déplacer le
+# risque prédit (probabilité de la classe positive) dans le mauvais sens.
+directional:
+  - column: credit_amount  # emprunter 50 % de plus ne rend pas plus sûr
+    factor: 1.5
+    expect: increase
+  - column: duration  # rembourser 50 % plus longtemps non plus
+    factor: 1.5
+    expect: increase
+# Une variation de probabilité plus petite que `tolerance` est ignorée (bruit des
+# modèles à arbres) ; au plus `max_violation_rate` des demandes peuvent violer l'attente.
+tolerance: 0.05
+max_violation_rate: 0.05
+
+# Sous-groupes sensibles de dataset.yaml : chaque groupe d'au moins
+# `min_group_size` demandes doit lui aussi atteindre promotion_threshold.
+# (L'équité au sens strict, écarts entre groupes et mitigation, est l'objet du Lab 8.)
+min_group_size: 30
