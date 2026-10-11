@@ -1,6 +1,6 @@
 # Fichier : .github/ISSUE_TEMPLATE/extension.yml
 # Formulaire GitHub de déclaration d'extension (mini-projet, Module 10).
-# À ouvrir sur le repo DU COURS (ORG_COURS/mlops-cours-2026), pas sur celui du binôme :
+# À ouvrir sur le repo DU COURS (mlops-itbs-2026/mlops-cours-2026), pas sur celui du binôme :
 # l'ordre des issues fait foi pour la règle « 3 binômes maximum par extension et par groupe ».
 name: "Mini-projet : déclarer mon extension"
 description: "Une issue par étudiant, au plus tard à la fin de la S8 (jalon J1)."

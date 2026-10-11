@@ -1,6 +1,6 @@
 # Fichier : .github/ISSUE_TEMPLATE/dataset-proposal.yml
 # Formulaire GitHub de proposition de dataset libre (mini-projet, Module 10).
-# À ouvrir sur le repo DU COURS (ORG_COURS/mlops-cours-2026) AVANT la séance du Lab 1 (S2).
+# À ouvrir sur le repo DU COURS (mlops-itbs-2026/mlops-cours-2026) AVANT la séance du Lab 1 (S2).
 name: "Mini-projet : proposer un dataset libre"
 description: "À valider avant la séance du Lab 1 (S2). Sans validation, le fil rouge credit scoring s'applique."
 title: "[Dataset] <groupe> — <binôme> — <nom du dataset>"
