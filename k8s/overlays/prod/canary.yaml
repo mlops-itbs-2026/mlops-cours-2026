@@ -1,0 +1,12 @@
+# Fichier : k8s/overlays/prod/canary.yaml
+# Part du trafic envoyée à la NOUVELLE révision (image de kustomization.yaml) :
+#   10 = canary · 100 = promotion · 0 = retour arrière vers la révision précédente.
+# Modifié par commit (python -m pipelines.gitops canary|promote|rollback), jamais par
+# kubectl patch : Argo CD (selfHeal) annulerait la modification.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-model
+spec:
+  predictor:
+    canaryTrafficPercent: 100

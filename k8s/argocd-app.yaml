@@ -1,0 +1,45 @@
+# Fichier : k8s/argocd-app.yaml
+# Deux Applications Argo CD : chacune synchronise un overlay Kustomize de votre fork
+# vers un namespace. Remplacez VOTRE_USER (2 occurrences), puis :
+#   kubectl apply -f k8s/argocd-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: scoring-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/VOTRE_USER/mlops-cours-2026.git
+    targetRevision: main
+    path: k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: scoring-staging
+  syncPolicy:
+    automated:
+      prune: true        # une ressource retirée de Git est supprimée du cluster
+      selfHeal: true     # une modification à la main (kubectl patch/edit) est annulée
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: scoring-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/VOTRE_USER/mlops-cours-2026.git
+    targetRevision: main
+    path: k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: scoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

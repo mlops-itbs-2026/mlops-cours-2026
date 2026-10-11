@@ -1,0 +1,25 @@
+# Fichier : k8s/overlays/staging/kustomization.yaml
+# Staging : la dernière image construite par la CI sur main, sans canary.
+# newTag (et newName) sont réécrits par le job deploy-staging de la CI : ne pas éditer
+# à la main (python -m pipelines.gitops deploy --env staging … fait la même chose).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: scoring-staging
+resources:
+  - ../../base
+images:
+  - name: scoring-api
+    newName: ghcr.io/votre_user/mlops-cours-2026/scoring-api
+    newTag: "0.0.0"
+patches:
+  # Économie de RAM : zéro pod quand personne n'appelle (scale-to-zero), un seul au plus
+  - target:
+      kind: InferenceService
+      name: scoring-model
+    patch: |-
+      - op: replace
+        path: /spec/predictor/minReplicas
+        value: 0
+      - op: replace
+        path: /spec/predictor/maxReplicas
+        value: 1

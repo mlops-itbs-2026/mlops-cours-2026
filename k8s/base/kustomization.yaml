@@ -1,0 +1,8 @@
+# Fichier : k8s/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - isvc.yaml
+# Pas de bloc « configurations: » : le transformateur images: de Kustomize (v4+) réécrit
+# l'image de toute liste « containers », y compris spec.predictor.containers d'un
+# InferenceService (vérifié avec Kustomize 5.8.1, la version embarquée par Argo CD 3.5).

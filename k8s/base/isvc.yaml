@@ -1,0 +1,31 @@
+# Fichier : k8s/base/isvc.yaml
+# L'InferenceService du Lab 5, désormais décrit dans Git et déployé par Argo CD.
+# Commun à staging et prod : ni namespace, ni image réelle, ni part du canary ici ;
+# chaque overlay (k8s/overlays/<env>) les fixe.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: scoring-model
+  annotations:
+    serving.kserve.io/deploymentMode: Knative        # canary natif (canaryTrafficPercent)
+    serving.kserve.io/enable-tag-routing: "true"     # routes latest-… et prev-… (canary)
+    autoscaling.knative.dev/window: "60s"
+    autoscaling.knative.dev/scale-down-delay: "30s"
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 5
+    scaleMetric: rps
+    scaleTarget: 200
+    containers:
+      - name: kserve-container
+        image: scoring-api      # nom logique : remplacé par l'overlay (bloc images:)
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 8000
+            protocol: TCP
+        resources:
+          requests: {cpu: "200m", memory: "256Mi"}
+          limits: {cpu: "1", memory: "512Mi"}
+        readinessProbe:
+          httpGet: {path: /health, port: 8000}

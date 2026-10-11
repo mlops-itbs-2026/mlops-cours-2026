@@ -1,0 +1,162 @@
+# Fichier : .github/workflows/ci.yml
+# CI du projet de scoring (Lab 6) : lint + tests -> image testée puis publiée sur GHCR
+# -> commit du nouveau tag dans k8s/overlays/staging (Argo CD déploie). Les workflows du
+# cours lui-même s'appellent course-*.yml : ne pas les modifier.
+name: CI scoring
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "packaging/**"
+      - "pipelines/**"
+      - "tests/**"
+      - "dataset.yaml"
+      - "params.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "packaging/**"
+      - "pipelines/**"
+      - "tests/**"
+      - "dataset.yaml"
+      - "params.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  API_VERSION: "2.1"  # MAJEUR.MINEUR de l'API ; tag de l'image = 2.1.<numéro du run>
+
+jobs:
+  test:
+    name: Lint + tests
+    runs-on: ubuntu-latest
+    env:
+      UV_LOCKED: "1"  # uv.lock fait foi : erreur s'il ne correspond plus à pyproject.toml
+    steps:
+      - uses: actions/checkout@v7
+      # Action tierce : épinglée par SHA de commit (Astral ne publie plus de tag majeur)
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          enable-cache: true
+      - name: Installer l'environnement du cours (uv.lock)
+        run: uv sync
+      - name: Lint (ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Tests (pytest) — API, contrat, manifests, pipelines KFP, webhook CT
+        run: uv run pytest -v
+
+  build:
+    name: Image scoring-api
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # publier sur ghcr.io avec le GITHUB_TOKEN
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - name: Nom, tag et version du modèle
+        id: meta
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"  # GHCR exige des minuscules
+          REPO="${GITHUB_REPOSITORY#*/}"
+          TAG="${API_VERSION}.${GITHUB_RUN_NUMBER}"
+          # « Re-run » d'un même run : nouveau tag, on ne réécrit jamais une image publiée
+          [ "$GITHUB_RUN_ATTEMPT" = "1" ] || TAG="${TAG}-${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "image=ghcr.io/${OWNER}/${REPO,,}/scoring-api"
+            echo "tag=${TAG}"
+            echo "model_version=$(jq -r .model_version packaging/model/metadata.json)"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - name: Construire l'image (sans la publier)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: packaging/Dockerfile
+          build-args: |
+            VERSION=${{ steps.meta.outputs.tag }}
+            MODEL_VERSION=${{ steps.meta.outputs.model_version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          load: true  # dans le Docker du runner, pour le test de fumée
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Test de fumée (le conteneur démarre et prédit)
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker run -d --name api -p 8000:8000 "$IMAGE"
+          for _ in $(seq 1 30); do curl -fsS localhost:8000/health && break; sleep 1; done
+          curl -fsS localhost:8000/version | tee /dev/stderr | grep -q "\"version\":\"${TAG}\""
+          uv run --no-project --with pyyaml==6.0.3 --with pandas==2.3.3 \
+            python -m pipelines.gitops payload > request.json
+          curl -fsS -X POST localhost:8000/predict -H "Content-Type: application/json" \
+            -d @request.json
+          docker rm -f api
+      - name: Connexion à GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publier l'image testée
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: packaging/Dockerfile
+          build-args: |
+            VERSION=${{ steps.meta.outputs.tag }}
+            MODEL_VERSION=${{ steps.meta.outputs.model_version }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+          push: true
+          cache-from: type=gha  # mêmes couches que l'image testée : rien n'est reconstruit
+
+  deploy-staging:
+    name: Déployer en staging (commit GitOps)
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # pousser le commit du nouveau tag
+    concurrency:
+      group: deploy-staging  # deux runs ne modifient jamais l'overlay en même temps
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - name: Nouveau tag dans k8s/overlays/staging (Argo CD fera le reste)
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          uv run --no-project --with pyyaml==6.0.3 python -m pipelines.gitops deploy \
+            --env staging --image "$IMAGE" --tag "$TAG" --note "[${GITHUB_SHA::7}]" --push
